@@ -15,11 +15,11 @@ spec:
   params:
     ## Repository parameters
   - name: GIT_REPO
-    value: git@gitlab.consulting.redhat.com:2222/uki-sa/ssa-summit-connect-2025.git
+    value: github.com/marrober/summit-connect-2025.git
   - name: GIT_REVISION
     value: "main"
   - name: clone_location
-    value: ssa-summit-connect-2025
+    value: summit-connect-2025
     ## Verify git commit parameters
   - name: certificate-identity
     value: user1@demo.redhat.com
