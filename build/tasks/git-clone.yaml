@@ -226,7 +226,7 @@ spec:
 
         ls -al 
 
-        git clone ${PARAM_URL} 
+        git clone https://${PARAM_URL} 
 
         cd ${REPO_NAME}
 
