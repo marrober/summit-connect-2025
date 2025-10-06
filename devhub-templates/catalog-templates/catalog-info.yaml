@@ -1,0 +1,178 @@
+apiVersion: backstage.io/v1alpha1
+kind: Component
+metadata:
+  name: ${{ values.name }}
+  title: ${{ values.name | title }}
+  description: ${{ values.description }}
+  tags:
+    - microservices
+    - istio
+    - kiali
+    - demo
+    - kubernetes
+    - travels
+  annotations:
+    backstage.io/kubernetes-id: ${{ values.name }}
+    backstage.io/kubernetes-namespace: travel-agency,travel-portal,travel-control
+    backstage.io/managed-by-location: url:${{ values.repoUrl }}
+    backstage.io/managed-by-origin-location: url:${{ values.repoUrl }}
+    # RHDH-specific annotations
+    rhdh.redhat.com/template-used: deploy-travels-app
+    rhdh.redhat.com/deployment-cluster: ${{ values.cluster }}
+    istio.io/service-mesh: enabled
+    kiali.io/dashboard: enabled
+    github.com/project-slug: benjphipps/travels-app
+    # OpenShift-specific annotations (if using OpenShift)
+    app.openshift.io/connects-to: travel-agency,travel-portal,travel-control
+  links:
+    - url: ${{ values.repoUrl }}
+      title: Source Code
+      icon: github
+    - url: http://localhost:8080
+      title: Travel Control Dashboard
+      icon: dashboard
+    - url: http://localhost:20001
+      title: Kiali Service Mesh Dashboard
+      icon: monitoring
+spec:
+  type: service
+  lifecycle: experimental
+  owner: ${{ values.owner }}
+  system: travel-platform
+  dependsOn:
+    - resource:travel-agency-services
+    - resource:travel-portal-services
+    - resource:travel-control-dashboard
+  providesApis:
+    - travel-api
+
+---
+apiVersion: backstage.io/v1alpha1
+kind: System
+metadata:
+  name: travel-platform
+  title: Travel Platform
+  description: Microservices platform for travel booking and management
+  tags:
+    - platform
+    - microservices
+    - travel
+spec:
+  owner: ${{ values.owner }}
+
+---
+apiVersion: backstage.io/v1alpha1
+kind: API
+metadata:
+  name: travel-api
+  title: Travel Services API
+  description: API for travel booking services including flights, hotels, cars, and insurance
+  tags:
+    - rest
+    - travel
+    - booking
+spec:
+  type: openapi
+  lifecycle: experimental
+  owner: ${{ values.owner }}
+  system: travel-platform
+  definition: |
+    openapi: 3.0.0
+    info:
+      title: Travel Services API
+      version: 1.0.0
+      description: API for travel booking and management services
+    paths:
+      /destinations:
+        get:
+          summary: Get available destinations
+          responses:
+            '200':
+              description: List of available destinations
+      /travels:
+        post:
+          summary: Create travel booking
+          requestBody:
+            required: true
+            content:
+              application/json:
+                schema:
+                  type: object
+                  properties:
+                    destination:
+                      type: string
+                    user:
+                      type: string
+                    requirements:
+                      type: object
+          responses:
+            '200':
+              description: Travel booking created successfully
+
+---
+apiVersion: backstage.io/v1alpha1
+kind: Resource
+metadata:
+  name: travel-agency-services
+  title: Travel Agency Services
+  description: Backend services for travel booking (flights, hotels, cars, insurance, discounts)
+  tags:
+    - kubernetes
+    - microservices
+    - backend
+spec:
+  type: kubernetes-cluster
+  owner: ${{ values.owner }}
+  system: travel-platform
+
+---
+apiVersion: backstage.io/v1alpha1
+kind: Resource
+metadata:
+  name: travel-portal-services
+  title: Travel Portal Services
+  description: Frontend portal services for different travel shops (UK, IT, FR)
+  tags:
+    - kubernetes
+    - microservices
+    - frontend
+spec:
+  type: kubernetes-cluster
+  owner: ${{ values.owner }}
+  system: travel-platform
+
+---
+apiVersion: backstage.io/v1alpha1
+kind: Resource
+metadata:
+  name: travel-control-dashboard
+  title: Travel Control Dashboard
+  description: Business dashboard for managing travel portal traffic and monitoring
+  tags:
+    - kubernetes
+    - dashboard
+    - monitoring
+spec:
+  type: kubernetes-cluster
+  owner: ${{ values.owner }}
+  system: travel-platform
+
+---
+apiVersion: backstage.io/v1alpha1
+kind: Component
+metadata:
+  name: ${{ values.name }}-chaos-engineering
+  title: Chaos Engineering Configuration
+  description: Chaos monkey configuration for resilience testing
+  tags:
+    - chaos-engineering
+    - testing
+    - resilience
+  annotations:
+    chaos.io/target-device: ${{ values.chaosDevice }}
+    chaos.io/delay-ms: "${{ values.chaosDelay }}"
+spec:
+  type: library
+  lifecycle: experimental
+  owner: ${{ values.owner }}
+  system: travel-platform

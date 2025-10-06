@@ -1,0 +1,24 @@
+apiVersion: argoproj.io/v1alpha1
+kind: AppProject
+metadata:
+  name: travel
+  namespace: openshift-gitops
+spec:
+  sourceRepos:
+  - '*'
+  - https://gitlab.consulting.redhat.com/uki-sa/ssa-summit-connect-2025
+  - https://github.com/kiali/demos.git
+
+  destinations:
+  - server: https://kubernetes.default.svc
+    namespace: '*'
+#  - server: https://api.celeron.demolab.local:6443
+#    namespace: '*'
+
+  clusterResourceWhitelist:
+  - group: ''
+    kind: Namespace
+  - group: 'rbac.authorization.k8s.io'
+    kind: ClusterRole
+  - group: 'rbac.authorization.k8s.io'
+    kind: ClusterRoleBinding

@@ -1,0 +1,147 @@
+# Travel Portal Services Deployment
+# This template fetches the original Kiali demo manifests for travel portal
+
+---
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: deploy-travel-portal-${{ values.name }}
+  namespace: travel-portal
+  labels:
+    app: ${{ values.name }}
+    component: travel-portal
+    owner: ${{ values.owner }}
+spec:
+  template:
+    metadata:
+      labels:
+        app: ${{ values.name }}
+        component: travel-portal-deployer
+    spec:
+      restartPolicy: Never
+      containers:
+      - name: kubectl-apply
+        image: bitnami/kubectl:latest
+        command: 
+        - /bin/sh
+        - -c
+        - |
+          echo "Deploying travel portal services..."
+          kubectl apply -f <(curl -L https://raw.githubusercontent.com/kiali/demos/master/travels/travel_portal.yaml) -n travel-portal
+          
+          # Add custom labels to all resources
+          kubectl label --overwrite -n travel-portal all app=${{ values.name }}
+          kubectl label --overwrite -n travel-portal all owner=${{ values.owner }}
+          kubectl label --overwrite -n travel-portal all managed-by=backstage
+          
+          echo "Travel portal deployment completed"
+        env:
+        - name: KUBECONFIG
+          value: /tmp/kubeconfig
+        volumeMounts:
+        - name: kubeconfig
+          mountPath: /tmp
+      volumes:
+      - name: kubeconfig
+        secret:
+          secretName: kubeconfig-${{ values.cluster }}
+
+---
+# Virtual Service for Istio (if enabled)
+apiVersion: networking.istio.io/v1beta1
+kind: VirtualService
+metadata:
+  name: travel-portal-vs-${{ values.name }}
+  namespace: travel-portal
+  labels:
+    app: ${{ values.name }}
+    component: travel-portal
+    owner: ${{ values.owner }}
+spec:
+  hosts:
+  - travels.uk
+  - viaggi.it
+  - voyages.fr
+  gateways:
+  - travel-portal-gateway
+  http:
+  - match:
+    - headers:
+        portal:
+          exact: travels.uk
+    route:
+    - destination:
+        host: travels.uk
+        port:
+          number: 8000
+  - match:
+    - headers:
+        portal:
+          exact: viaggi.it
+    route:
+    - destination:
+        host: viaggi.it
+        port:
+          number: 8000
+  - match:
+    - headers:
+        portal:
+          exact: voyages.fr
+    route:
+    - destination:
+        host: voyages.fr
+        port:
+          number: 8000
+
+---
+apiVersion: networking.istio.io/v1beta1
+kind: Gateway
+metadata:
+  name: travel-portal-gateway-${{ values.name }}
+  namespace: travel-portal
+  labels:
+    app: ${{ values.name }}
+    component: travel-portal
+    owner: ${{ values.owner }}
+spec:
+  selector:
+    istio: ingressgateway
+  servers:
+  - port:
+      number: 80
+      name: http
+      protocol: HTTP
+    hosts:
+    - travels.uk
+    - viaggi.it
+    - voyages.fr
+
+---
+# Configuration for travel portals
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: travel-portal-config-${{ values.name }}
+  namespace: travel-portal
+  labels:
+    app: ${{ values.name }}
+    component: travel-portal
+    owner: ${{ values.owner }}
+data:
+  deployment-info: |
+    name: ${{ values.name }}
+    description: ${{ values.description }}
+    owner: ${{ values.owner }}
+    cluster: ${{ values.cluster }}
+    istio-enabled: "${{ values.istioEnabled }}"
+  portal-config: |
+    portals:
+      - name: travels.uk
+        region: UK
+        language: en
+      - name: viaggi.it
+        region: IT
+        language: it
+      - name: voyages.fr
+        region: FR
+        language: fr

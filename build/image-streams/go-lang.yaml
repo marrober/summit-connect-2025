@@ -1,0 +1,16 @@
+kind: ImageStream
+apiVersion: image.openshift.io/v1
+metadata:
+  name: golang
+spec:
+  lookupPolicy:
+    local: false
+  tags:
+    - name: tip-trixie
+      from:
+        kind: DockerImage
+        name: 'golang:tip-trixie'
+      importPolicy:
+        importMode: Legacy
+      referencePolicy:
+        type: Source

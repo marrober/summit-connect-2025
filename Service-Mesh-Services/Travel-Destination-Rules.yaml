@@ -1,0 +1,128 @@
+---
+apiVersion: networking.istio.io/v1
+kind: DestinationRule
+metadata:
+  name: travels-dr
+  namespace: travel-agency
+spec:
+  host: travels.travel-agency.svc.cluster.local
+---
+apiVersion: networking.istio.io/v1
+kind: DestinationRule
+metadata:
+  name: cars-dr
+  namespace: travel-agency
+spec:
+  host: cars.travel-agency.svc.cluster.local
+  trafficPolicy:
+    connectionPool:
+      http:
+        maxRequestsPerConnection: 1
+    loadBalancer:
+      localityLbSetting:
+        enabled: true
+      simple: ROUND_ROBIN
+    outlierDetection:
+      baseEjectionTime: 1m
+      consecutive5xxErrors: 1
+      interval: 1s
+---
+apiVersion: networking.istio.io/v1
+kind: DestinationRule
+metadata:
+  name: discounts-dr
+  namespace: travel-agency
+spec:
+  host: discounts.travel-agency.svc.cluster.local
+  trafficPolicy:
+    connectionPool:
+      http:
+        maxRequestsPerConnection: 1
+    loadBalancer:
+      localityLbSetting:
+        enabled: true
+      simple: ROUND_ROBIN
+    outlierDetection:
+      baseEjectionTime: 1m
+      consecutive5xxErrors: 1
+      interval: 1s
+---
+apiVersion: networking.istio.io/v1
+kind: DestinationRule
+metadata:
+  name: flights-dr
+  namespace: travel-agency
+spec:
+  host: flights.travel-agency.svc.cluster.local
+  trafficPolicy:
+    connectionPool:
+      http:
+        maxRequestsPerConnection: 1
+    loadBalancer:
+      localityLbSetting:
+        enabled: true
+      simple: ROUND_ROBIN
+    outlierDetection:
+      baseEjectionTime: 1m
+      consecutive5xxErrors: 1
+      interval: 1s
+---
+apiVersion: networking.istio.io/v1
+kind: DestinationRule
+metadata:
+  name: hotels-dr
+  namespace: travel-agency
+spec:
+  host: hotels.travel-agency.svc.cluster.local
+  trafficPolicy:
+    connectionPool:
+      http:
+        maxRequestsPerConnection: 1
+    loadBalancer:
+      localityLbSetting:
+        enabled: true
+      simple: ROUND_ROBIN
+    outlierDetection:
+      baseEjectionTime: 1m
+      consecutive5xxErrors: 1
+      interval: 1s
+---
+apiVersion: networking.istio.io/v1
+kind: DestinationRule
+metadata:
+  name: insurances-dr
+  namespace: travel-agency
+spec:
+  host: insurances.travel-agency.svc.cluster.local
+  trafficPolicy:
+    connectionPool:
+      http:
+        maxRequestsPerConnection: 1
+    loadBalancer:
+      localityLbSetting:
+        enabled: true
+      simple: ROUND_ROBIN
+    outlierDetection:
+      baseEjectionTime: 1m
+      consecutive5xxErrors: 1
+      interval: 1s
+---
+apiVersion: networking.istio.io/v1
+kind: DestinationRule
+metadata:
+  name: mysqldb-dr
+  namespace: travel-agency
+spec:
+  host: mysqldb.travel-agency.svc.cluster.local
+  trafficPolicy:
+    connectionPool:
+      http:
+        maxRequestsPerConnection: 1
+    loadBalancer:
+      localityLbSetting:
+        enabled: true
+      simple: ROUND_ROBIN
+    outlierDetection:
+      baseEjectionTime: 1m
+      consecutive5xxErrors: 1
+      interval: 1s

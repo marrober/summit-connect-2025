@@ -1,0 +1,33 @@
+kind: ConfigMap
+apiVersion: v1
+metadata:
+  name: app-config-rhdh
+  namespace: backstage
+data:
+  app-config-rhdh.yaml: |
+    app:
+      title: Red Hat Developer Hub
+    integrations:
+     github:
+       - host: github.com
+         token: "your_token"
+    auth:
+      allowGuestAccess: true
+      environment: development
+      providers:
+        guest:
+          dangerouslyAllowSignInWithoutUserInCatalog: true
+          dangerouslyAllowOutsideDevelopment: true
+        github:
+          development:
+            clientId: yourclientid
+            clientSecret: yourclientsecret
+            signIn:
+              resolvers:
+                - resolver: usernameMatchingUserEntityName
+                  dangerouslyAllowSignInWithoutUserInCatalog: true
+    enabled:
+      github: true
+    extensions:
+      installation:
+        enabled: true  

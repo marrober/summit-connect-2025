@@ -1,0 +1,95 @@
+# Copyright 2017 Istio Authors
+#
+#   Licensed under the Apache License, Version 2.0 (the "License");
+#   you may not use this file except in compliance with the License.
+#   You may obtain a copy of the License at
+#
+#       http://www.apache.org/licenses/LICENSE-2.0
+#
+#   Unless required by applicable law or agreed to in writing, software
+#   distributed under the License is distributed on an "AS IS" BASIS,
+#   WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+#   See the License for the specific language governing permissions and
+#   limitations under the License.
+
+##################################################################################################
+# Travels services
+##################################################################################################
+kind: Deployment
+apiVersion: apps/v1
+metadata:
+  name: travels-v1
+spec:
+  selector:
+    matchLabels:
+      app: travels
+      version: v1
+  replicas: 1
+  template:
+    metadata:
+      annotations:
+        readiness.status.sidecar.istio.io/applicationPorts: ""
+        proxy.istio.io/config: |
+          tracing:
+            zipkin:
+              address: zipkin.istio-system:9411
+            sampling: 10
+            custom_tags:
+              http.header.portal:
+                header:
+                  name: portal
+              http.header.device:
+                header:
+                  name: device
+              http.header.user:
+                header:
+                  name: user
+              http.header.travel:
+                header:
+                  name: travel
+      labels:
+        app: travels
+        version: v1
+    spec:
+      containers:
+        - name: travels
+          image: quay.io/marrober/travel_travels
+          imagePullPolicy: IfNotPresent
+          ports:
+            - containerPort: 8000
+          securityContext:
+            allowPrivilegeEscalation: false
+            capabilities:
+              drop:
+              - ALL
+            privileged: false
+            readOnlyRootFilesystem: true
+          env:
+            - name: CURRENT_SERVICE
+              value: "travels"
+            - name: CURRENT_VERSION
+              value: "v1"
+            - name: LISTEN_ADDRESS
+              value: ":8000"
+            - name: FLIGHTS_SERVICE
+              value: "http://flights.travel-agency:8000"
+            - name: HOTELS_SERVICE
+              value: "http://hotels.travel-agency:8000"
+            - name: CARS_SERVICE
+              value: "http://cars.travel-agency:8000"
+            - name: INSURANCES_SERVICE
+              value: "http://insurances.travel-agency:8000"
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: travels
+  labels:
+    app: travels
+spec:
+  ports:
+    - name: http
+      port: 8000
+  selector:
+    app: travels
+---

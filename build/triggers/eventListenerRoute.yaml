@@ -1,0 +1,21 @@
+kind: Route
+apiVersion: route.openshift.io/v1
+metadata:
+  name: trigger
+  namespace: travel-ci
+  labels:
+    app.kubernetes.io/managed-by: EventListener
+    app.kubernetes.io/part-of: Triggers
+    eventlistener: travel-ci-pipeline-listener-hotels
+  annotations:
+    openshift.io/host.generated: 'true'
+spec:
+  to:
+    kind: Service
+    name: el-travel-ci-pipeline-listener-hotels
+    weight: 100
+  port:
+    targetPort: http-listener
+  tls:
+    termination: edge
+  wildcardPolicy: None

@@ -1,0 +1,19 @@
+spec:
+  dataImportCronTemplates:
+  - metadata:
+      name: cars-vm-cron
+      annotations:
+        cdi.kubevirt.io/storage.bind.immediate.requested: "true" 
+    spec:
+      schedule: "* * 21 * *" 
+      template:
+        spec:
+          source:
+            registry: 
+              url: docker://quay.io/pharriso/cars-vm:v1
+          storage:
+            resources:
+              requests:
+                storage: 10Gi
+      garbageCollect: Outdated
+      managedDataSource: cars-vm

@@ -1,0 +1,46 @@
+---
+apiVersion: networking.istio.io/v1
+kind: Gateway
+metadata:
+  name: control-gateway
+  namespace: travel-control
+spec:
+  selector:
+    istio: travelgateway
+  servers:
+  - port:
+      number: 80
+      name: http
+      protocol: HTTP
+    hosts:
+    - "*"
+
+---
+kind: VirtualService
+apiVersion: networking.istio.io/v1alpha3
+metadata:
+  name: control
+  namespace: travel-control
+spec:
+  hosts:
+    - "*"
+  gateways:
+    - control-gateway
+  http:
+    - route:
+        - destination:
+            host: control
+            subset: v1
+          weight: 100
+---
+kind: DestinationRule
+apiVersion: networking.istio.io/v1alpha3
+metadata:
+  name: control
+  namespace: travel-control
+spec:
+  host: control.travel-control.svc.cluster.local
+  subsets:
+    - labels:
+        version: v1
+      name: v1

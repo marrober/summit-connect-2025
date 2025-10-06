@@ -1,0 +1,155 @@
+apiVersion: tekton.dev/v1beta1
+kind: Task
+metadata:
+  name: update-and-commit-argocd-app-file
+spec:
+  params:
+  - name: GIT_URL
+    type: string
+  - name: GIT_REPO_NAME
+    type: string
+  - name: GIT_BRANCH
+    type: string
+    default: ""
+  - name: GIT_PR_TARGET_BRANCH
+    type: string
+    default: ""
+  - name: GIT_PATH_TO_CONTENT
+    type: string
+    default: ""
+  - name: GIT_USER_NAME
+    type: string
+  - name: GIT_USER_EMAIL
+    type: string
+  - name: GIT_COMMIT_COMMENT
+    type: string
+  - name: IMAGE
+    type: string
+  - name: LOCATION
+    type: string
+  - name: userHome
+    type: string
+    default: "/tmp"
+  results:
+    - name: commit-id
+  steps:
+    - name: update-ops-repo-with-imagetag
+      env:
+      - name: HOME
+        value: "$(params.userHome)"
+      - name: PARAM_USER_HOME
+        value: $(params.userHome)
+      - name: WORKSPACE_SSH_DIRECTORY_BOUND
+        value: $(workspaces.ssh-directory.bound)
+      - name: WORKSPACE_SSH_DIRECTORY_PATH
+        value: $(workspaces.ssh-directory.path)
+      image: "image-registry.openshift-image-registry.svc:5000/travel-ci/devex-terminal-4:full-terminal-1.6"
+      securityContext:
+        capabilities:
+          add: ["SETFCAP"]
+      script: >
+        #!/bin/sh
+
+        set -x
+
+        echo "Git URL : " $(params.GIT_URL)".git"
+
+        echo "Git Repo name : " $(params.GIT_REPO_NAME)
+
+        echo "Git branch for change : " $(params.GIT_BRANCH)
+
+        echo "Path to content in git repo : " $(params.GIT_PATH_TO_CONTENT)
+
+        echo "Username for git changes : " $(params.GIT_USER_NAME)
+
+        echo "Email address for git changes : " $(params.GIT_USER_EMAIL)
+
+        echo "Git commit comment : " $(params.GIT_COMMIT_COMMENT)
+
+        echo "Image to be patched : " $(params.IMAGE)
+
+        echo "SSH dir bound : ${WORKSPACE_SSH_DIRECTORY_BOUND}"
+
+        echo "SSH dir path : ${WORKSPACE_SSH_DIRECTORY_PATH}"
+
+        echo "User home : ${PARAM_USER_HOME}"
+
+        ls -al /home
+
+        ls -al "${PARAM_USER_HOME}"
+
+        if [ "${WORKSPACE_SSH_DIRECTORY_BOUND}" = "true" ] ; then
+          ls -al "${WORKSPACE_SSH_DIRECTORY_PATH}" 
+          cp -R "${WORKSPACE_SSH_DIRECTORY_PATH}" "${PARAM_USER_HOME}"/.ssh
+          chmod 700 "${PARAM_USER_HOME}"/.ssh
+          chmod -R 400 "${PARAM_USER_HOME}"/.ssh/*
+          ls "${PARAM_USER_HOME}"/.ssh/*
+        fi  
+
+        cd /workspace/files
+
+        mkdir $(params.LOCATION)
+
+        cd $(params.LOCATION)
+
+        pwd
+
+        git config --global user.email $(params.GIT_USER_EMAIL)
+
+        git config --global user.name $(params.GIT_USER_NAME)
+
+        ls -alR
+
+        git clone ssh://$(params.GIT_URL)
+
+        echo "-----------------------------------------------------------------"
+
+        echo "view content of directory"
+
+        echo "-----------------------------------------------------------------"
+
+        cd /workspace/files/$(params.LOCATION)/$(params.GIT_REPO_NAME)/$(params.GIT_PATH_TO_CONTENT)
+
+        ls -al
+
+        echo "-----------------------------------------------------------------"
+
+        echo "Select branch"
+
+        git checkout $(params.GIT_BRANCH)
+
+        echo "-----------------------------------------------------------------"
+
+        echo "File before change"
+
+        echo "-----------------------------------------------------------------"
+
+        cat kustomization.yaml
+
+        kustomize edit set image $(params.IMAGE)
+
+        echo "-----------------------------------------------------------------"
+
+        echo "File after change"
+
+        echo "-----------------------------------------------------------------"
+
+        cat kustomization.yaml
+
+        cd /workspace/files/$(params.LOCATION)/$(params.GIT_REPO_NAME)
+
+        git add .
+
+        git commit -m "$(params.GIT_COMMIT_COMMENT)"
+
+        echo "-----------------------------------------------------------------"
+
+        git push -u
+
+        git rev-parse HEAD > $(results.commit-id.path)
+
+        cat $(results.commit-id.path)
+
+  workspaces:
+    - name: files
+    - name: ssh-directory

@@ -1,0 +1,20 @@
+apiVersion: v1
+kind: Service
+metadata:
+  name: travelgateway
+  namespace: travel-control
+spec:
+  type: ClusterIP 
+  selector:
+    istio: travelgateway
+  ports:
+    - name: status-port
+      port: 15021
+      protocol: TCP
+      targetPort: 15021
+    - name: http2
+      port: 80
+      targetPort: 80
+    - name: https
+      port: 443
+      targetPort: 443

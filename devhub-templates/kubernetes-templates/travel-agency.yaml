@@ -1,0 +1,81 @@
+# Travel Agency Services Deployment
+# This template fetches the original Kiali demo manifests and applies templating
+
+---
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: deploy-travel-agency-${{ values.name }}
+  namespace: travel-agency
+  labels:
+    app: ${{ values.name }}
+    component: travel-agency
+    owner: ${{ values.owner }}
+spec:
+  template:
+    metadata:
+      labels:
+        app: ${{ values.name }}
+        component: travel-agency-deployer
+    spec:
+      restartPolicy: Never
+      containers:
+      - name: kubectl-apply
+        image: bitnami/kubectl:latest
+        command: 
+        - /bin/sh
+        - -c
+        - |
+          echo "Deploying travel agency services..."
+          kubectl apply -f <(curl -L https://raw.githubusercontent.com/kiali/demos/master/travels/travel_agency.yaml) -n travel-agency
+          
+          # Add custom labels to all resources
+          kubectl label --overwrite -n travel-agency all app=${{ values.name }}
+          kubectl label --overwrite -n travel-agency all owner=${{ values.owner }}
+          kubectl label --overwrite -n travel-agency all managed-by=backstage
+          
+          {% if values.enableChaos %}
+          # Configure chaos monkey for flights service
+          echo "Configuring chaos monkey..."
+          kubectl set env deploy flights-v1 \
+            CHAOS_MONKEY=true \
+            CHAOS_MONKEY_SLEEP=${{ values.chaosDelay }} \
+            CHAOS_MONKEY_DEVICE=${{ values.chaosDevice }} \
+            -n travel-agency
+          {% endif %}
+          
+          echo "Travel agency deployment completed"
+        env:
+        - name: KUBECONFIG
+          value: /tmp/kubeconfig
+        volumeMounts:
+        - name: kubeconfig
+          mountPath: /tmp
+      volumes:
+      - name: kubeconfig
+        secret:
+          secretName: kubeconfig-${{ values.cluster }}
+
+---
+# Service Monitor for Prometheus (if available)
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: travel-agency-config-${{ values.name }}
+  namespace: travel-agency
+  labels:
+    app: ${{ values.name }}
+    component: travel-agency
+    owner: ${{ values.owner }}
+data:
+  deployment-info: |
+    name: ${{ values.name }}
+    description: ${{ values.description }}
+    owner: ${{ values.owner }}
+    cluster: ${{ values.cluster }}
+    istio-enabled: "${{ values.istioEnabled }}"
+    chaos-enabled: "${{ values.enableChaos }}"
+    {% if values.enableChaos %}
+    chaos-device: "${{ values.chaosDevice }}"
+    chaos-delay: "${{ values.chaosDelay }}"
+    {% endif %}

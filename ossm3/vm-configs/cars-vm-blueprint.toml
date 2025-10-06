@@ -1,0 +1,55 @@
+name = "cars-vm"
+description = ""
+version = "0.0.8"
+[[packages]]
+name = "podman"
+version = "*"
+modules = []
+groups = []
+distro = "rhel-9"
+
+[customizations]
+[[customizations.user]]
+name = "root"
+password = "$6$/g.SpCUd8.yXeCQi$TwDvLjMtZmFzkkw8rspqd3DuN8.ZIoxKbBMPP9A841YuKJiXAKnBGdzMTcce5RTZmmG8grFp0l1knC5/tV0Ib0"
+key = ""
+[customizations.timezone]
+timezone = "Europe/London"
+[customizations.locale]
+[customizations.firewall]
+[customizations.firewall.services]
+[customizations.services]
+[[containers]]
+source = "quay.io/kiali/demo_travels_cars:v1"
+tls-verify = true
+
+[[customizations.files]]
+path = "/etc/containers/systemd/cars.container"
+mode = "0777"
+user = "root"
+group = "root"
+data = """
+[Unit]
+Description=Fedora Cars Container
+
+[Container]
+Label=app=cars-container
+ContainerName=cars-container
+Image=quay.io/kiali/demo_travels_cars:v1
+Environment=CURRENT_SERVICE='cars'
+Environment=CURRENT_VERSION='v1
+Environment=LISTEN_ADDRESS=':8000'
+Environment=MYSQL_SERVICE='mysqldb.travel-agency.svc.cluster.local:3306'
+Environment=MYSQL_USER='root'
+Environment=MYSQL_PASSWORD='password'
+Environment=DISCOUNTS_SERVICE='http://discounts.travel-agency.svc.cluster.local:8000'
+Environment=MYSQL_DATABASE='test'
+PodmanArgs=-p 8000:8000
+Pull=Never
+
+[Install]
+WantedBy=multi-user.target default.target
+
+[Service]
+Restart=always"
+"""

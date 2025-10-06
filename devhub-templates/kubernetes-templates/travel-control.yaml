@@ -1,0 +1,194 @@
+# Travel Control Dashboard Deployment
+# This template deploys the travel control dashboard and business monitoring
+
+---
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: deploy-travel-control-${{ values.name }}
+  namespace: travel-control
+  labels:
+    app: ${{ values.name }}
+    component: travel-control
+    owner: ${{ values.owner }}
+spec:
+  template:
+    metadata:
+      labels:
+        app: ${{ values.name }}
+        component: travel-control-deployer
+    spec:
+      restartPolicy: Never
+      containers:
+      - name: kubectl-apply
+        image: bitnami/kubectl:latest
+        command: 
+        - /bin/sh
+        - -c
+        - |
+          echo "Deploying travel control dashboard..."
+          kubectl apply -f <(curl -L https://raw.githubusercontent.com/kiali/demos/master/travels/travel_control.yaml) -n travel-control
+          
+          # Add custom labels to all resources
+          kubectl label --overwrite -n travel-control all app=${{ values.name }}
+          kubectl label --overwrite -n travel-control all owner=${{ values.owner }}
+          kubectl label --overwrite -n travel-control all managed-by=backstage
+          
+          echo "Travel control dashboard deployment completed"
+        env:
+        - name: KUBECONFIG
+          value: /tmp/kubeconfig
+        volumeMounts:
+        - name: kubeconfig
+          mountPath: /tmp
+      volumes:
+      - name: kubeconfig
+        secret:
+          secretName: kubeconfig-${{ values.cluster }}
+
+---
+# Service for external access
+apiVersion: v1
+kind: Service
+metadata:
+  name: control-external-${{ values.name }}
+  namespace: travel-control
+  labels:
+    app: ${{ values.name }}
+    component: travel-control
+    owner: ${{ values.owner }}
+spec:
+  type: LoadBalancer
+  ports:
+  - name: http
+    port: 8080
+    targetPort: 8080
+    protocol: TCP
+  selector:
+    app: control
+
+---
+# Istio Gateway for external access
+apiVersion: networking.istio.io/v1beta1
+kind: Gateway
+metadata:
+  name: travel-control-gateway-${{ values.name }}
+  namespace: travel-control
+  labels:
+    app: ${{ values.name }}
+    component: travel-control
+    owner: ${{ values.owner }}
+spec:
+  selector:
+    istio: ingressgateway
+  servers:
+  - port:
+      number: 80
+      name: http
+      protocol: HTTP
+    hosts:
+    - travel-control-${{ values.name }}.local
+
+---
+apiVersion: networking.istio.io/v1beta1
+kind: VirtualService
+metadata:
+  name: travel-control-vs-${{ values.name }}
+  namespace: travel-control
+  labels:
+    app: ${{ values.name }}
+    component: travel-control
+    owner: ${{ values.owner }}
+spec:
+  hosts:
+  - travel-control-${{ values.name }}.local
+  gateways:
+  - travel-control-gateway-${{ values.name }}
+  http:
+  - match:
+    - uri:
+        prefix: /
+    route:
+    - destination:
+        host: control
+        port:
+          number: 8080
+
+---
+# Service Monitor for observability
+apiVersion: networking.istio.io/v1beta1
+kind: ServiceMonitor
+metadata:
+  name: travel-control-monitor-${{ values.name }}
+  namespace: travel-control
+  labels:
+    app: ${{ values.name }}
+    component: travel-control
+    owner: ${{ values.owner }}
+spec:
+  selector:
+    matchLabels:
+      app: control
+  endpoints:
+  - port: http
+    interval: 30s
+    path: /metrics
+
+---
+# Access instructions ConfigMap
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: access-instructions-${{ values.name }}
+  namespace: travel-control
+  labels:
+    app: ${{ values.name }}
+    component: travel-control
+    owner: ${{ values.owner }}
+data:
+  README.md: |
+    # Travel Control Dashboard Access
+    
+    ## Local Access (Port Forward)
+    To access the travel control dashboard locally:
+    ```bash
+    kubectl port-forward svc/control 8080:8080 -n travel-control
+    ```
+    Then open: http://localhost:8080
+    
+    ## External Access
+    {% if values.istioEnabled %}
+    Via Istio Gateway: http://travel-control-${{ values.name }}.local
+    
+    Add to /etc/hosts:
+    ```
+    <INGRESS_IP> travel-control-${{ values.name }}.local
+    ```
+    {% else %}
+    Via LoadBalancer service:
+    ```bash
+    kubectl get svc control-external-${{ values.name }} -n travel-control
+    ```
+    {% endif %}
+    
+    ## Features
+    - Business dashboard with traffic simulation controls
+    - Real-time metrics and monitoring
+    - Portal-specific traffic generation settings
+    - Chaos engineering controls (if enabled)
+    
+    ## Monitoring
+    {% if values.kialiDashboard %}
+    Access Kiali dashboard for service mesh observability:
+    ```bash
+    istioctl dashboard kiali
+    ```
+    {% endif %}
+  
+  deployment-info: |
+    name: ${{ values.name }}
+    description: ${{ values.description }}
+    owner: ${{ values.owner }}
+    cluster: ${{ values.cluster }}
+    istio-enabled: "${{ values.istioEnabled }}"
+    kiali-enabled: "${{ values.kialiDashboard }}"

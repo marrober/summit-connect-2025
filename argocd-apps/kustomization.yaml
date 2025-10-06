@@ -1,0 +1,12 @@
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+
+resources:
+- namespace.yaml
+- root-application.yaml
+- travel-agency-hotels.yaml
+- rbac.yaml
+- tekton-resources-build.yaml
+images:
+- name: quay.io/marrober/travel_hotels
+  newTag: 279h8

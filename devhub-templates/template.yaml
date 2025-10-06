@@ -1,0 +1,243 @@
+apiVersion: scaffolder.backstage.io/v1beta3
+kind: Template
+metadata:
+  name: deploy-travels-app
+  title: Deploy Travels Demo App from GitLab
+  description: Deploy the Kiali/Istio travels demo application with microservices architecture
+  tags:
+    - istio
+    - kiali
+    - microservices
+    - demo
+    - kubernetes
+spec:
+  owner: platform-team
+  type: service
+
+  parameters:
+    - title: Application Information
+      required:
+        - name
+        - description
+        - owner
+      properties:
+        name:
+          title: Deployment Name
+          type: string
+          description: Unique name for this deployment instance
+          pattern: '^([a-z0-9\-]+)$'
+          default: travels-demo
+        description:
+          title: Description
+          type: string
+          description: Description of this travels app deployment
+          default: Kiali demo travel application with microservices
+        owner:
+          title: Owner
+          type: string
+          description: Team responsible for this deployment
+          ui:field: OwnerPicker
+          ui:options:
+            allowedKinds:
+              - Group
+
+    - title: Source Repository
+      properties:
+        repoUrl:
+          title: Repository Location
+          type: string
+          description: GitLab repository URL
+          default: https://gitlab.consulting.redhat.com/uki-sa/ssa-summit-connect-2025
+          ui:readonly: true
+        branch:
+          title: Branch
+          type: string
+          description: Git branch to deploy from
+          default: main
+
+    - title: Kubernetes Configuration
+      required:
+        - cluster
+        - istioEnabled
+      properties:
+        cluster:
+          title: Target Cluster
+          type: string
+          description: Kubernetes cluster to deploy to
+          enum:
+            - development
+            - staging
+            - production
+          enumNames:
+            - Development Cluster
+            - Staging Cluster
+            - Production Cluster
+        istioEnabled:
+          title: Istio Service Mesh
+          type: boolean
+          description: Enable Istio service mesh injection
+          default: true
+        kialiDashboard:
+          title: Enable Kiali Dashboard
+          type: boolean
+          description: Deploy Kiali dashboard for service mesh observability
+          default: true
+
+    - title: Chaos Engineering (Optional)
+      properties:
+        enableChaos:
+          title: Enable Chaos Monkey
+          type: boolean
+          description: Enable chaos engineering features in flights service
+          default: false
+        chaosDevice:
+          title: Chaos Target Device
+          type: string
+          description: Target device for chaos testing
+          enum:
+            - mobile
+            - web
+            - all
+          default: mobile
+          ui:widget: select
+          ui:options:
+            conditionallyShow:
+              property: enableChaos
+              value: true
+        chaosDelay:
+          title: Chaos Delay (ms)
+          type: number
+          description: Delay in milliseconds for chaos testing
+          default: 4000
+          ui:options:
+            conditionallyShow:
+              property: enableChaos
+              value: true
+
+  steps:
+    - id: fetch-source
+      name: Fetch Travels App Source
+      action: fetch:plain
+      input:
+        url: ${{ parameters.repoUrl }}
+        targetPath: ./source
+
+    - id: create-kubernetes-manifests
+      name: Generate Kubernetes Manifests
+      action: fetch:template
+      input:
+        url: ./kubernetes-templates
+        targetPath: ./manifests
+        values:
+          name: ${{ parameters.name }}
+          description: ${{ parameters.description }}
+          owner: ${{ parameters.owner }}
+          cluster: ${{ parameters.cluster }}
+          istioEnabled: ${{ parameters.istioEnabled }}
+          kialiDashboard: ${{ parameters.kialiDashboard }}
+          enableChaos: ${{ parameters.enableChaos }}
+          chaosDevice: ${{ parameters.chaosDevice }}
+          chaosDelay: ${{ parameters.chaosDelay }}
+
+    - id: create-namespaces
+      name: Create Kubernetes Namespaces
+      action: kubernetes:apply
+      input:
+        manifestPath: ./manifests/namespaces.yaml
+        clusterRef: ${{ parameters.cluster }}
+
+    - id: deploy-travel-agency
+      name: Deploy Travel Agency Services
+      action: kubernetes:apply
+      input:
+        manifestPath: ./manifests/travel-agency.yaml
+        namespace: travel-agency
+        clusterRef: ${{ parameters.cluster }}
+
+    - id: deploy-travel-portal
+      name: Deploy Travel Portal Services
+      action: kubernetes:apply
+      input:
+        manifestPath: ./manifests/travel-portal.yaml
+        namespace: travel-portal
+        clusterRef: ${{ parameters.cluster }}
+
+    - id: deploy-travel-control
+      name: Deploy Travel Control Dashboard
+      action: kubernetes:apply
+      input:
+        manifestPath: ./manifests/travel-control.yaml
+        namespace: travel-control
+        clusterRef: ${{ parameters.cluster }}
+
+    - id: setup-chaos-monkey
+      name: Configure Chaos Engineering
+      if: ${{ parameters.enableChaos }}
+      action: kubernetes:patch
+      input:
+        resource: deployment/flights-v1
+        namespace: travel-agency
+        clusterRef: ${{ parameters.cluster }}
+        patch:
+          spec:
+            template:
+              spec:
+                containers:
+                  - name: flights
+                    env:
+                      - name: CHAOS_MONKEY
+                        value: "true"
+                      - name: CHAOS_MONKEY_SLEEP
+                        value: "${{ parameters.chaosDelay }}"
+                      - name: CHAOS_MONKEY_DEVICE
+                        value: "${{ parameters.chaosDevice }}"
+
+    - id: setup-port-forwarding
+      name: Setup Access Instructions
+      action: debug:log
+      input:
+        message: |
+          Travels app deployed successfully!
+          
+          To access the application:
+          1. Port-forward the control service:
+             kubectl port-forward svc/control 8080:8080 -n travel-control
+          2. Open http://localhost:8080 in your browser
+          
+          {% if parameters.kialiDashboard %}
+          To access Kiali dashboard:
+          istioctl dashboard kiali
+          {% endif %}
+
+    - id: create-catalog-info
+      name: Create Catalog Info
+      action: fetch:template
+      input:
+        url: ./catalog-templates/catalog-info.yaml
+        targetPath: ./
+        values:
+          name: ${{ parameters.name }}
+          description: ${{ parameters.description }}
+          owner: ${{ parameters.owner }}
+          repoUrl: ${{ parameters.repoUrl }}
+
+    - id: register-component
+      name: Register in Backstage Catalog
+      action: catalog:register
+      input:
+        repoContentsUrl: ${{ parameters.repoUrl }}
+        catalogInfoPath: '/catalog-info.yaml'
+
+  output:
+    links:
+      - title: Source Repository
+        url: ${{ parameters.repoUrl }}
+      - title: Open in Catalog
+        icon: catalog
+        entityRef: ${{ steps['register-component'].output.entityRef }}
+      - title: Travels Dashboard
+        url: http://localhost:8080
+        description: Access after port-forwarding (kubectl port-forward svc/control 8080:8080 -n travel-control)
+      - title: Kiali Dashboard
+        url: http://localhost:20001
+        description: Service mesh observability (istioctl dashboard kiali)

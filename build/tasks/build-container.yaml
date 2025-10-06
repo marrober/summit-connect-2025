@@ -1,0 +1,120 @@
+apiVersion: tekton.dev/v1beta1
+kind: Task
+metadata:
+  name: build
+spec:
+  params:
+    - name: TLSVERIFY
+      default: "false"
+      description: Verify the TLS on the registry endpoint
+      type: string
+    - name: STORAGE_DRIVER
+      description: The Buildah storage STORAGE_DRIVER
+      type: string
+    - name: path_context
+      type: string
+    - name: app_name
+      type: string
+    - name: dockerfile
+      type: string
+  stepTemplate:
+    env:
+      - name: "HOME"
+        value: "/tekton/home"
+  steps:
+    - name: show-locations
+      script: |
+        echo "$(workspaces.resources.path)"
+        echo "$(params.app_name)"
+        echo "$(params.path_context)"
+      image: image-registry.openshift-image-registry.svc:5000/travel-ci/buildah:latest
+      resources: {}
+      securityContext:
+        capabilities:
+          add:
+          - SETFCAP
+      workingDir: $(workspaces.resources.path)
+    - name: ls-1
+      command:
+      - ls
+      - -al
+      image: image-registry.openshift-image-registry.svc:5000/travel-ci/buildah:latest
+      resources: {}
+      securityContext:
+        capabilities:
+          add:
+          - SETFCAP
+      workingDir: $(workspaces.resources.path)
+    - name: copy-exe-to-docker-dir
+      command:
+      - cp
+      - $(workspaces.resources.path)/$(params.app_name)
+      - .
+      image: image-registry.openshift-image-registry.svc:5000/travel-ci/buildah:latest
+      resources: {}
+      securityContext:
+        capabilities:
+          add:
+          - SETFCAP
+      workingDir: $(workspaces.resources.path)/$(params.path_context)
+    - name: ls-2
+      command:
+      - ls
+      - -al
+      image: image-registry.openshift-image-registry.svc:5000/travel-ci/buildah:latest
+      resources: {}
+      securityContext:
+        capabilities:
+          add:
+          - SETFCAP
+      workingDir: $(workspaces.resources.path)/$(params.path_context)
+    - name: build-container
+      command:
+      - buildah
+      - bud
+      - --tls-verify=$(params.TLSVERIFY)
+      - --storage-driver=$(params.STORAGE_DRIVER)
+      - --root
+      - /files/buildah-containers
+      - --layers
+      - -f
+      - $(params.dockerfile)
+      - -t
+      - my-container-image
+      - .
+      image: image-registry.openshift-image-registry.svc:5000/travel-ci/buildah:latest
+      resources: {}
+      securityContext:
+        capabilities:
+          add:
+          - SETFCAP
+      workingDir: /resources/$(params.path_context)
+    - name: list-images
+      command:
+      - buildah
+      - images
+      - --storage-driver=$(params.STORAGE_DRIVER)
+      - --root
+      - /files/buildah-containers
+      image: image-registry.openshift-image-registry.svc:5000/travel-ci/buildah:latest
+      resources:
+        limits:
+          memory: 500Mi
+          cpu: 500m
+        requests:
+          memory: 250Mi
+          cpu: 150m
+      securityContext:
+        capabilities:
+          add:
+          - SETFCAP
+      workingDir: /
+  volumes:
+    - emptyDir: {}
+      name: envparams
+  workspaces:
+    - mountPath: /files
+      name: files
+    - mountPath: /resources
+      name: resources
+

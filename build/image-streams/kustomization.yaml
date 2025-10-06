@@ -1,0 +1,11 @@
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+
+resources:
+- buildah-image.yaml
+- terminal-image.yaml
+- rhel9-nodejs-16.yaml
+- git-init-rhel9.yaml
+- go-lang.yaml
+- ubi.yaml
+- cosign.yaml

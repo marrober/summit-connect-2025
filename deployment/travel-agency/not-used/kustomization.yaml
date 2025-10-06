@@ -1,0 +1,23 @@
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+
+resources:
+- travel-agency-cars.yaml
+- travel-agency-discounts.yaml
+- travel-agency-flights.yaml
+- agency-podmonitor.yaml
+- namespace.yaml
+- rbac.yaml
+images:
+- name: quay.io/marrober/travel_cars
+  newTag: vgr6s
+- name: quay.io/marrober/travel_discounts
+  newTag: 7t6jb
+- name: quay.io/marrober/travel_flights
+  newTag: 2gjz4
+- name: quay.io/marrober/travel_hotels
+  newTag: 279h8
+- name: quay.io/marrober/travel_insurances
+  newTag: ff9f2
+- name: quay.io/marrober/travel_travels
+  newTag: 4gkw6
