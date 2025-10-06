@@ -18,6 +18,8 @@ spec:
     type: string
   - name: clone_location
     type: string
+  - name: GIT_REPO_NAME
+    type: string
     ## Git signed verification parameters
   - name: certificate-identity
     type: string
@@ -91,6 +93,8 @@ spec:
       value: $(params.GIT_REPO)
     - name: revision
       value: $(params.GIT_REVISION)
+    - name: repoName
+      value: $(params.GIT_REPO_NAME)
     - name: subdirectory
       value: ""
     - name: deleteExisting

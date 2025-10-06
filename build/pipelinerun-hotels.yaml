@@ -20,6 +20,8 @@ spec:
     value: "main"
   - name: clone_location
     value: summit-connect-2025
+  - name: GIT_REPO_NAME
+    value: summit-connect-2025
     ## Verify git commit parameters
   - name: certificate-identity
     value: user1@demo.redhat.com
