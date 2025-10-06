@@ -33,7 +33,7 @@ spec:
   source:
     path: deployment/istio-gateway
     targetRevision: main
-    repoURL: https://gitlab.consulting.redhat.com/uki-sa/ssa-summit-connect-2025
+    repoURL: https://github.com/marrober/summit-connect-2025.git
   syncPolicy:
     automated: 
       prune: true 

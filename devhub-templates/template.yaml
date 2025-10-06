@@ -47,7 +47,7 @@ spec:
           title: Repository Location
           type: string
           description: GitLab repository URL
-          default: https://gitlab.consulting.redhat.com/uki-sa/ssa-summit-connect-2025
+          default: https://github.com/marrober/summit-connect-2025.git
           ui:readonly: true
         branch:
           title: Branch

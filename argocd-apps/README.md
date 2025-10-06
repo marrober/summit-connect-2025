@@ -11,7 +11,7 @@ argocd login --username admin --password $(oc get secret/openshift-gitops-cluste
  2. Add the Summit Connect 2025 repository to ArgoCD with an appropriate token that has read access to the repository.
 
 ````bash
-argocd repo add https://gitlab.consulting.redhat.com/uki-sa/ssa-summit-connect-2025.git --username <username> --password <token>
+argocd repo add https://github.com/marrober/summit-connect-2025.git.git --username <username> --password <token>
 ````
  
  3. Confirm that the repository has been added with the command:

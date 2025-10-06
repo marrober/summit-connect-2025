@@ -6,7 +6,7 @@ metadata:
 spec:
   sourceRepos:
   - '*'
-  - https://gitlab.consulting.redhat.com/uki-sa/ssa-summit-connect-2025
+  - https://github.com/marrober/summit-connect-2025.git
   - https://github.com/kiali/demos.git
 
   destinations:
