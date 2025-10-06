@@ -103,8 +103,6 @@ spec:
     workspaces:
     - name: output
       workspace: workspace
-    - name: ssh-directory
-      workspace: git-credentials
 ##------------------------------------------------------------------
 # Build 'GO' source code
 ##------------------------------------------------------------------
@@ -295,8 +293,6 @@ spec:
     workspaces:
     - name: files
       workspace: files
-    - name: ssh-directory
-      workspace: git-credentials
 ##------------------------------------------------------------------
 # Force ArgoCD sync
 ##------------------------------------------------------------------
@@ -328,4 +324,3 @@ spec:
   workspaces:
   - name: workspace
   - name: files
-  - name: git-credentials
