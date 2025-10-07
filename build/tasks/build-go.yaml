@@ -71,7 +71,8 @@ spec:
       # go build -buildvcs=false -o "${WORKSPACE_OUTPUT_PATH}"/$(params.app_name)
 
       cd "${WORKSPACE_OUTPUT_PATH}"
-      ls -al docker/travel_agency/hotels/hotels
+      pwd
+      ls -al $(params.app_name)/docker/travel_agency/hotels/hotels
     env:
     - name: GOOS
       value: "$(params.GOOS)"
