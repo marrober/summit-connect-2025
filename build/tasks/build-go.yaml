@@ -74,7 +74,7 @@ spec:
 
       cd "${WORKSPACE_OUTPUT_PATH}"
       pwd
-      ls -al $(params.clone_location)/docker/travel_agency/hotels
+      ls -alR $(params.clone_location)
     env:
     - name: GOOS
       value: "$(params.GOOS)"
