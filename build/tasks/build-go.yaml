@@ -68,11 +68,11 @@ spec:
       cat go.sum
       cat go.mod
 
-      go build -buildvcs=false  -o $(params.clone_location)/src/docker/travel_agency/hotels
+      go build -buildvcs=false  -o $(params.clone_location)/src/travels/docker/travel_agency/hotels
 
       cd "${WORKSPACE_OUTPUT_PATH}"
       pwd
-      ls -al $(params.clone_location)/src/docker/travel_agency/hotels
+      ls -al $(params.clone_location)/src/travels/docker/travel_agency/hotels
 
     env:
     - name: GOOS
