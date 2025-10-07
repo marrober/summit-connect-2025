@@ -67,9 +67,9 @@ spec:
       cat go.mod
 
       rm -Rf docker/travel_agency/hotels/hotels
-      cd travel_agency/hotels
-      go build -buildvcs=false  -o ../../docker/travel_agency/hotels/hotels
-      cd ../..
+      cd src/travel_agency/hotels
+      go build -buildvcs=false  -o ../../../docker/travel_agency/hotels/hotels
+      cd ../../..
 
       # go build -buildvcs=false -o "${WORKSPACE_OUTPUT_PATH}"/$(params.app_name)
       ls -al "${WORKSPACE_OUTPUT_PATH}"
