@@ -52,7 +52,7 @@ spec:
   - name: output
   steps:
   - name: build
-    image: quay.io/kiali/demo_travels_hotels:v1
+    image: image-registry.openshift-image-registry.svc:5000/travel-ci/golang:tip-trixie
     workingDir: $(workspaces.output.path)
     script: |
       echo ${WORKSPACE_OUTPUT_PATH}
