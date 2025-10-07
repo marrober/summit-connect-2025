@@ -52,7 +52,7 @@ spec:
   - name: output
   steps:
   - name: build
-    image: image-registry.openshift-image-registry.svc:5000/travel-ci/golang:tip-trixie
+    image: quay.io/kiali/demo_travels_hotels:v1
     workingDir: $(workspaces.output.path)
     script: |
       echo ${WORKSPACE_OUTPUT_PATH}
@@ -65,8 +65,15 @@ spec:
       go mod tidy
       cat go.sum
       cat go.mod
-      go build -buildvcs=false -o "${WORKSPACE_OUTPUT_PATH}"/$(params.app_name)
+
+      rm -Rf docker/travel_agency/hotels/hotels
+      cd travel_agency/hotels
+      go build -buildvcs=false  -o ../../docker/travel_agency/hotels/hotels
+      cd ../..
+
+      # go build -buildvcs=false -o "${WORKSPACE_OUTPUT_PATH}"/$(params.app_name)
       ls -al "${WORKSPACE_OUTPUT_PATH}"
+      ls -al docker/travel_agency/hotels/hotels
     env:
     - name: GOOS
       value: "$(params.GOOS)"
