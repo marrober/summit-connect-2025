@@ -48,6 +48,8 @@ spec:
     default: ""
   - name: app_name
     default: ""
+  - name: clone_location
+    default: ""
   workspaces:
   - name: output
   steps:
@@ -72,7 +74,7 @@ spec:
 
       cd "${WORKSPACE_OUTPUT_PATH}"
       pwd
-      ls -al $(params.app_name)/docker/travel_agency/hotels/hotels
+      ls -al $(params.clone_location)/docker/travel_agency/hotels/hotels
     env:
     - name: GOOS
       value: "$(params.GOOS)"

@@ -116,6 +116,8 @@ spec:
       value: $(params.clone_location)/$(params.app_path)
     - name: app_name
       value: $(params.app_name)
+    - name: clone_location
+      value: $(params.clone_location)
     taskRef:
       kind: Task
       name: golang-build
