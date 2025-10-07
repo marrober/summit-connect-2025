@@ -62,19 +62,18 @@ spec:
       echo $(params.app_name)
       cd "${WORKSPACE_OUTPUT_PATH}"
       ls -al $(params.app_path)
-      cd "${WORKSPACE_OUTPUT_PATH}"/$(params.app_path)/$(params.app_name)
+      cd $(params.clone_location)/src/travels/travel_agency/hotels
       ls -al
       go mod tidy
       cat go.sum
       cat go.mod
 
-      go build -buildvcs=false  -o ../../../docker/travel_agency/hotels/hotels
-
-      # go build -buildvcs=false -o "${WORKSPACE_OUTPUT_PATH}"/$(params.app_name)
+      go build -buildvcs=false  -o $(params.clone_location)/src/docker/travel_agency/hotels
 
       cd "${WORKSPACE_OUTPUT_PATH}"
       pwd
-      ls -alR $(params.clone_location)
+      ls -al $(params.clone_location)/src/docker/travel_agency/hotels
+
     env:
     - name: GOOS
       value: "$(params.GOOS)"
